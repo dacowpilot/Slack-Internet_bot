@@ -3,7 +3,7 @@
 # Commands
 My slack bot has 3 commands  
 /Internet_bot-help: gives a list of commands   
-/Internet_bot-ping: tells the latency   
+/Internet_bot-ping: tells the latency<br>
 /Internet_bot-download: tests download speed   
  
  
