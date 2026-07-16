@@ -1,5 +1,6 @@
 const axios = require("axios");
 require("dotenv").config();
+const { performance } = require("perf_hooks");
 
 const { App } = require("@slack/bolt");
 
@@ -9,50 +10,58 @@ const app = new App({
   socketMode: true
 });
 
-app.command("/supportbot-ping", async ({ command, ack, respond }) => {
+app.command("/internet_bot-ping", async ({ command, ack, respond }) => {
   const start = Date.now();
   await ack();
   const latency = Date.now() - start;
   await respond({ text: `Pong!\nLatency: ${latency}ms` });
 });
 
-app.command("/supportbot-help", async ({ ack, respond }) => {
+app.command("/internet_bot-help", async ({ ack, respond }) => {
   await ack();
   await respond({
     text:
 `Available Commands:
-/supportbot-ping - Check bot latency
-/supportbot-catfact - Get a cat fact
-/supportbot-joke - Hear a funny joke`
+/internet_bot-ping - bot latency test
+/internet_bot-download - checks download speed
+/internet_bot-help - list of commands
+/internet_bot-hello - says hi`
   });
 });
 
-app.command("/supportbot-catfact", async ({ ack, respond }) => {
+app.command("/internet_bot-download", async ({ ack, respond }) => {
   await ack();
 
+  await respond("Testing download speed...");
+
   try {
-    const response = await axios.get("https://catfact.ninja/fact");
-    await respond({ text: `Cat Fact:\n${response.data.fact}` });
-  } catch (err) {
-    await respond({ text: "Failed to fetch a cat fact." });
+    const downloadSize = 10 * 1024 * 1024; // 10 MB
+    const downloadStart = performance.now();
+
+    await axios.get(
+      `https://speed.cloudflare.com/__down?bytes=${downloadSize}`,
+      {
+        responseType: "arraybuffer",
+        timeout: 30000
+      }
+    );
+
+    const downloadSeconds = (performance.now() - downloadStart) / 1000;
+    const downloadMbps =
+      (downloadSize * 8) / downloadSeconds / 1_000_000;
+
+    await respond(`Download Speed: *${downloadMbps.toFixed(2)} Mbps*`);
+
+  } catch (error) {
+    console.error(error);
+    await respond("❌ Speed test failed.");
   }
 });
 
-
-app.command("/supportbot-joke", async ({ ack, respond }) => {
+app.command("/internet_bot-hello", async ({ ack, respond, command }) => {
   await ack();
 
-  try {
-    const response = await axios.get("https://official-joke-api.appspot.com/random_joke");
-    await respond({
-      text:
-`${response.data.setup}
-
-${response.data.punchline}`
-    });
-  } catch (err) {
-    await respond({ text: "Failed to fetch a joke." });
-  }
+  await respond(`👋 Hello, ${command.user_name}!`);
 });
 
 (async () => {
